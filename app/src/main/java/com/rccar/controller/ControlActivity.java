@@ -19,33 +19,31 @@ import androidx.appcompat.app.AppCompatActivity;
 /**
  * Ana kontrol ekranı.
  *
- * Yeni özellikler:
- *   • Gyro Gain SeekBar  (0–100, anlık gönderim)
- *   • Gyro Direction Toggle butonu (+1 / -1)
- *   • Telemetri paneline gyro bilgileri eklendi (gain, dir, correction, raw rate)
- *
- * Her komut paketine gyroGain + gyroDir eklenerek receiver'a gönderilir.
- * Receiver, gelen GG/GD değerlerine göre gyro işlemcisini günceller.
+ * Pil yönetimi UI:
+ *   • Hücre sayısı (2S / 3S) telemetriden alınıp gösterilir
+ *   • Hücre başına voltaj ayrı gösterilir
+ *   • Düşük voltaj kilidi aktifken: turuncu uyarı banner + motor engeli bildirimi
+ *   • Pil çubuğu rengini hücre voltajına göre günceller (yeşil→turuncu→kırmızı)
  */
 public class ControlActivity extends AppCompatActivity {
 
     private static final String TAG = "ControlActivity";
-    private static final int SEND_MS              = 50;    // 20 Hz
+    private static final int SEND_MS              = 50;
     private static final int TELEMETRY_TIMEOUT_MS = 3000;
 
-    // --- Kontrol arayüzü ---
-    private SeekBar  sbThrottle, sbSteer;
-    private SeekBar  sbGyroGain;
+    // --- Kontrol ---
+    private SeekBar  sbThrottle, sbSteer, sbGyroGain;
     private TextView tvStatus;
     private TextView tvThrottle, tvSteer, tvTrim;
     private TextView tvGyroGain, tvGyroDir;
-    private Button   btnTrimL, btnTrimR, btnReset;
-    private Button   btnGyroDir, btnSetup;
+    private Button   btnTrimL, btnTrimR, btnReset, btnGyroDir, btnSetup;
 
     // --- Telemetri paneli ---
-    private TextView    tvTelSeq, tvTelThrottle, tvTelSteer, tvTelVoltage;
+    private TextView    tvTelSeq, tvTelThrottle, tvTelSteer;
+    private TextView    tvTelVoltage, tvTelCells, tvTelCellV;
     private TextView    tvTelGyroGain, tvTelGyroDir, tvTelGyroCorr, tvTelGyroRate;
     private ProgressBar pbVoltage;
+    private TextView    tvLowVoltageWarning;  // Düşük voltaj uyarısı
 
     private ConnectionConfig config;
     private UdpManager       udp;
@@ -63,13 +61,12 @@ public class ControlActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    // 20Hz komut gönderici — her pakete gyro parametreleri eklenir
+    // 20Hz komut gönderici
     private final Runnable sender = new Runnable() {
         @Override public void run() {
             if (udp.isReady()) {
-                byte[] pkt = RCProtocol.buildPacketWithGyro(
-                        throttle, steer + trim, gyroGain, gyroDir);
-                udp.send(pkt);
+                udp.send(RCProtocol.buildPacketWithGyro(
+                        throttle, steer + trim, gyroGain, gyroDir));
             }
             handler.postDelayed(this, SEND_MS);
         }
@@ -92,7 +89,8 @@ public class ControlActivity extends AppCompatActivity {
         if (disconnectPending) return;
         String targetSsid = config.getSsid();
         if (targetSsid == null || targetSsid.isEmpty()) return;
-        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiManager wm = (WifiManager) getApplicationContext()
+                .getSystemService(Context.WIFI_SERVICE);
         WifiInfo info = wm.getConnectionInfo();
         if (info != null) {
             String ssid = info.getSSID();
@@ -126,7 +124,6 @@ public class ControlActivity extends AppCompatActivity {
         connectUdp();
     }
 
-    // -------------------------------------------------------------------------
     private void bindViews() {
         sbThrottle    = findViewById(R.id.sbThrottle);
         sbSteer       = findViewById(R.id.sbSteer);
@@ -147,20 +144,21 @@ public class ControlActivity extends AppCompatActivity {
         tvTelThrottle = findViewById(R.id.tvTelThrottle);
         tvTelSteer    = findViewById(R.id.tvTelSteer);
         tvTelVoltage  = findViewById(R.id.tvTelVoltage);
+        tvTelCells    = findViewById(R.id.tvTelCells);
+        tvTelCellV    = findViewById(R.id.tvTelCellV);
         tvTelGyroGain = findViewById(R.id.tvTelGyroGain);
         tvTelGyroDir  = findViewById(R.id.tvTelGyroDir);
         tvTelGyroCorr = findViewById(R.id.tvTelGyroCorr);
         tvTelGyroRate = findViewById(R.id.tvTelGyroRate);
         pbVoltage     = findViewById(R.id.pbVoltage);
+        tvLowVoltageWarning = findViewById(R.id.tvLowVoltageWarning);
 
         refreshTrim();
         refreshGyroUI();
         resetTelemetryDisplay();
     }
 
-    // -------------------------------------------------------------------------
     private void setupSeekBars() {
-        // Throttle
         sbThrottle.setMax(200);
         sbThrottle.setProgress(100);
         sbThrottle.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -176,7 +174,6 @@ public class ControlActivity extends AppCompatActivity {
             }
         });
 
-        // Steer
         sbSteer.setMax(200);
         sbSteer.setProgress(100);
         sbSteer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -192,7 +189,6 @@ public class ControlActivity extends AppCompatActivity {
             }
         });
 
-        // Gyro Gain
         sbGyroGain.setMax(100);
         sbGyroGain.setProgress(gyroGain);
         sbGyroGain.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -205,18 +201,15 @@ public class ControlActivity extends AppCompatActivity {
         });
     }
 
-    // -------------------------------------------------------------------------
     private void setupButtons() {
         btnTrimL.setOnClickListener(v -> { trim = Math.max(-30, trim - 1); refreshTrim(); });
         btnTrimR.setOnClickListener(v -> { trim = Math.min( 30, trim + 1); refreshTrim(); });
         btnReset.setOnClickListener(v -> { trim = 0; refreshTrim(); });
         btnSetup.setOnClickListener(v -> goToSetup());
-        btnGyroDir.setOnClickListener(v -> toggleGyroDirection());
-    }
-
-    private void toggleGyroDirection() {
-        gyroDir = (gyroDir > 0) ? -1 : 1;
-        refreshGyroUI();
+        btnGyroDir.setOnClickListener(v -> {
+            gyroDir = (gyroDir > 0) ? -1 : 1;
+            refreshGyroUI();
+        });
     }
 
     private void refreshTrim() {
@@ -235,7 +228,6 @@ public class ControlActivity extends AppCompatActivity {
         btnGyroDir.setText(gyroDir > 0 ? "▶ NRM" : "◀ TRS");
     }
 
-    // -------------------------------------------------------------------------
     private void setupTelemetryListener() {
         udp.setTelemetryListener(data -> runOnUiThread(() -> updateTelemetryUI(data)));
     }
@@ -244,43 +236,63 @@ public class ControlActivity extends AppCompatActivity {
         lastTelemetryMs   = System.currentTimeMillis();
         disconnectPending = false;
 
+        // Temel telemetri
         tvTelSeq.setText("SEQ: " + data.seq);
         tvTelThrottle.setText("HIZ: " + data.throttle);
         tvTelSteer.setText("YON: " + data.steer);
-        tvTelVoltage.setText(String.format("BAT: %.2fV", data.voltage));
 
-        // Gyro telemetri
+        // Pil
+        tvTelVoltage.setText(String.format("%.2fV", data.voltage));
+        tvTelCells.setText(data.cellsLabel());
+        tvTelCellV.setText(String.format("%.2fV/H", data.cellVoltage));
+
+        try {
+            tvTelVoltage.setTextColor(Color.parseColor(data.batteryColor()));
+            tvTelCellV.setTextColor(Color.parseColor(data.batteryColor()));
+        } catch (Exception ignored) {}
+
+        // Pil çubuğu
+        int pct = (int)(data.cellLevelFraction() * 100);
+        pbVoltage.setProgress(pct);
+
+        // Düşük voltaj uyarı banner'ı
+        if (data.lowVoltage) {
+            tvLowVoltageWarning.setVisibility(android.view.View.VISIBLE);
+            tvLowVoltageWarning.setText(
+                data.cells > 0
+                ? String.format("⚠ DÜŞÜK PİL! %.2fV/hücre — MOTOR KİLİTLİ", data.cellVoltage)
+                : "⚠ PİL ALGILANAMADI — MOTOR KİLİTLİ"
+            );
+        } else {
+            tvLowVoltageWarning.setVisibility(android.view.View.GONE);
+        }
+
+        // Gyro
         tvTelGyroGain.setText("GG: " + data.gyroGain + "%");
         tvTelGyroDir.setText("GD: " + (data.gyroDirection > 0 ? "NRM" : "TRS"));
         tvTelGyroCorr.setText("GC: " + data.gyroCorrection);
         tvTelGyroRate.setText(String.format("GR: %.1f°/s", data.gyroRawRate));
 
-        // Gyro renk göstergesi
-        if (data.isGyroActive()) {
-            tvTelGyroGain.setTextColor(Color.parseColor("#4CAF50"));
-        } else {
-            tvTelGyroGain.setTextColor(Color.parseColor("#757575"));
-        }
-
-        int pct = (int)(data.voltagePercent() * 100);
-        pbVoltage.setProgress(pct);
-        try { tvTelVoltage.setTextColor(Color.parseColor(data.voltageColor())); }
-        catch (Exception ignored) {}
+        tvTelGyroGain.setTextColor(data.isGyroActive()
+                ? Color.parseColor("#4CAF50")
+                : Color.parseColor("#757575"));
     }
 
     private void resetTelemetryDisplay() {
         tvTelSeq.setText("SEQ: --");
         tvTelThrottle.setText("HIZ: --");
         tvTelSteer.setText("YON: --");
-        tvTelVoltage.setText("BAT: -.-V");
+        tvTelVoltage.setText("--V");
+        tvTelCells.setText("?S");
+        tvTelCellV.setText("--V/H");
         tvTelGyroGain.setText("GG: --");
         tvTelGyroDir.setText("GD: --");
         tvTelGyroCorr.setText("GC: --");
         tvTelGyroRate.setText("GR: --");
         pbVoltage.setProgress(0);
+        tvLowVoltageWarning.setVisibility(android.view.View.GONE);
     }
 
-    // -------------------------------------------------------------------------
     private void connectUdp() {
         tvStatus.setText("Bağlanılıyor...");
         startTimeMs = System.currentTimeMillis();
@@ -296,40 +308,38 @@ public class ControlActivity extends AppCompatActivity {
             }
             public void onDisconnected() {
                 runOnUiThread(() -> {
-                    tvStatus.setText("Bağlantı kesildi");
                     if (!disconnectPending) onConnectionLost();
                 });
             }
             public void onError(String m) {
                 runOnUiThread(() -> {
                     tvStatus.setText("Hata: " + m);
-                    handler.postDelayed(this::goToSetupDelayed, 1500);
+                    handler.postDelayed(this::goSetup, 1500);
                 });
             }
-            private void goToSetupDelayed() { goToSetup(); }
+            private void goSetup() { goToSetup(); }
         });
     }
 
     private void monitorNetwork() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkRequest request = new NetworkRequest.Builder()
+        NetworkRequest req = new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onLost(@androidx.annotation.NonNull Network network) {
-                Log.w(TAG, "WiFi ağı kaybedildi");
                 onConnectionLost();
             }
         };
-        try { cm.registerNetworkCallback(request, networkCallback); }
-        catch (Exception e) { Log.e(TAG, "Network callback hatası", e); }
+        try { cm.registerNetworkCallback(req, networkCallback); }
+        catch (Exception e) { Log.e(TAG, "Network callback", e); }
     }
 
     private void onConnectionLost() {
         if (disconnectPending) return;
         disconnectPending = true;
         runOnUiThread(() -> {
-            tvStatus.setText("⚠ Bağlantı koptu — yeniden bağlanılıyor...");
+            tvStatus.setText("⚠ Bağlantı koptu");
             tvStatus.setTextColor(Color.RED);
             resetTelemetryDisplay();
             handler.postDelayed(this::goToSetup, 2000);
@@ -356,7 +366,6 @@ public class ControlActivity extends AppCompatActivity {
         finish();
     }
 
-    // -------------------------------------------------------------------------
     @Override protected void onPause() {
         super.onPause();
         handler.removeCallbacks(sender);
