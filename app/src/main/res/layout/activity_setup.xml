@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="ESP8266 Modülüne Bağlan"
+            android:text="ESP Modülüne Bağlan"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="#616161"
             app:layout_constraintEnd_toEndOf="parent"
