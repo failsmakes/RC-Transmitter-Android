@@ -16,6 +16,9 @@ import android.util.Log;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.Locale;
+import java.util.Objects;
+
 /**
  * Ana kontrol ekranı.
  *
@@ -93,11 +96,12 @@ public class ControlActivity extends AppCompatActivity {
                 .getSystemService(Context.WIFI_SERVICE);
         WifiInfo info = wm.getConnectionInfo();
         if (info != null) {
-            String ssid = info.getSSID();
-            if (ssid != null) {
-                if (ssid.startsWith("\"") && ssid.endsWith("\""))
-                    ssid = ssid.substring(1, ssid.length() - 1);
-                if (!ssid.equals("<unknown ssid>") && !ssid.equals(targetSsid)) {
+            String ssidRaw = info.getSSID();
+            if (ssidRaw != null) {
+                String ssid = (ssidRaw.startsWith("\"") && ssidRaw.endsWith("\""))
+                        ? ssidRaw.substring(1, ssidRaw.length() - 1)
+                        : ssidRaw;
+                if (!Objects.equals(ssid, "<unknown ssid>") && !Objects.equals(ssid, targetSsid)) {
                     Log.w(TAG, "SSID değişti: " + ssid);
                     onConnectionLost();
                 }
@@ -164,13 +168,13 @@ public class ControlActivity extends AppCompatActivity {
         sbThrottle.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int p, boolean u) {
                 throttle = p - 100;
-                tvThrottle.setText("GAZ: " + throttle);
+                tvThrottle.setText(String.format(Locale.US, "GAZ: %d", throttle));
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {
                 sb.setProgress(100);
                 throttle = 0;
-                tvThrottle.setText("GAZ: 0");
+                tvThrottle.setText(String.format(Locale.US, "GAZ: %d", 0));
             }
         });
 
@@ -179,13 +183,13 @@ public class ControlActivity extends AppCompatActivity {
         sbSteer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int p, boolean u) {
                 steer = p - 100;
-                tvSteer.setText("YÖN: " + steer);
+                tvSteer.setText(String.format(Locale.US, "YÖN: %d", steer));
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {
                 sb.setProgress(100);
                 steer = 0;
-                tvSteer.setText("YÖN: 0");
+                tvSteer.setText(String.format(Locale.US, "YÖN: %d", 0));
             }
         });
 
@@ -213,7 +217,7 @@ public class ControlActivity extends AppCompatActivity {
     }
 
     private void refreshTrim() {
-        tvTrim.setText("TRIM: " + (trim >= 0 ? "+" : "") + trim + "°");
+        tvTrim.setText(String.format(Locale.US, "TRIM: %s%d°", (trim >= 0 ? "+" : ""), trim));
     }
 
     private void refreshGyroUI() {
@@ -221,10 +225,10 @@ public class ControlActivity extends AppCompatActivity {
             tvGyroGain.setText("GYRO: KAPALI");
             tvGyroGain.setTextColor(Color.parseColor("#757575"));
         } else {
-            tvGyroGain.setText("GYRO: " + gyroGain + "%");
+            tvGyroGain.setText(String.format(Locale.US, "GYRO: %d%%", gyroGain));
             tvGyroGain.setTextColor(Color.parseColor("#4CAF50"));
         }
-        tvGyroDir.setText("YÖN: " + (gyroDir > 0 ? "NRM" : "TRS"));
+        tvGyroDir.setText(String.format(Locale.US, "YÖN: %s", (gyroDir > 0 ? "NRM" : "TRS")));
         btnGyroDir.setText(gyroDir > 0 ? "▶ NRM" : "◀ TRS");
     }
 
@@ -237,14 +241,14 @@ public class ControlActivity extends AppCompatActivity {
         disconnectPending = false;
 
         // Temel telemetri
-        tvTelSeq.setText("SEQ: " + data.seq);
-        tvTelThrottle.setText("HIZ: " + data.throttle);
-        tvTelSteer.setText("YON: " + data.steer);
+        tvTelSeq.setText(String.format(Locale.US, "SEQ: %d", data.seq));
+        tvTelThrottle.setText(String.format(Locale.US, "HIZ: %d", data.throttle));
+        tvTelSteer.setText(String.format(Locale.US, "YON: %d", data.steer));
 
         // Pil
-        tvTelVoltage.setText(String.format("%.2fV", data.voltage));
+        tvTelVoltage.setText(String.format(Locale.US, "%.2fV", data.voltage));
         tvTelCells.setText(data.cellsLabel());
-        tvTelCellV.setText(String.format("%.2fV/H", data.cellVoltage));
+        tvTelCellV.setText(String.format(Locale.US, "%.2fV/H", data.cellVoltage));
 
         try {
             tvTelVoltage.setTextColor(Color.parseColor(data.batteryColor()));
@@ -260,7 +264,7 @@ public class ControlActivity extends AppCompatActivity {
             tvLowVoltageWarning.setVisibility(android.view.View.VISIBLE);
             tvLowVoltageWarning.setText(
                 data.cells > 0
-                ? String.format("⚠ DÜŞÜK PİL! %.2fV/hücre — MOTOR KİLİTLİ", data.cellVoltage)
+                ? String.format(Locale.US, "⚠ DÜŞÜK PİL! %.2fV/hücre — MOTOR KİLİTLİ", data.cellVoltage)
                 : "⚠ PİL ALGILANAMADI — MOTOR KİLİTLİ"
             );
         } else {
@@ -268,10 +272,10 @@ public class ControlActivity extends AppCompatActivity {
         }
 
         // Gyro
-        tvTelGyroGain.setText("GG: " + data.gyroGain + "%");
-        tvTelGyroDir.setText("GD: " + (data.gyroDirection > 0 ? "NRM" : "TRS"));
-        tvTelGyroCorr.setText("GC: " + data.gyroCorrection);
-        tvTelGyroRate.setText(String.format("GR: %.1f°/s", data.gyroRawRate));
+        tvTelGyroGain.setText(String.format(Locale.US, "GG: %d%%", data.gyroGain));
+        tvTelGyroDir.setText(String.format(Locale.US, "GD: %s", (data.gyroDirection > 0 ? "NRM" : "TRS")));
+        tvTelGyroCorr.setText(String.format(Locale.US, "GC: %d", data.gyroCorrection));
+        tvTelGyroRate.setText(String.format(Locale.US, "GR: %.1f°/s", data.gyroRawRate));
 
         tvTelGyroGain.setTextColor(data.isGyroActive()
                 ? Color.parseColor("#4CAF50")
@@ -283,7 +287,7 @@ public class ControlActivity extends AppCompatActivity {
         tvTelThrottle.setText("HIZ: --");
         tvTelSteer.setText("YON: --");
         tvTelVoltage.setText("--V");
-        tvTelCells.setText("?S");
+        tvTelCells.setText("--S");
         tvTelCellV.setText("--V/H");
         tvTelGyroGain.setText("GG: --");
         tvTelGyroDir.setText("GD: --");
@@ -300,7 +304,7 @@ public class ControlActivity extends AppCompatActivity {
             public void onConnected() {
                 runOnUiThread(() -> {
                     startTimeMs = System.currentTimeMillis();
-                    tvStatus.setText("Bağlı ✓  " + config.getIp());
+                    tvStatus.setText(String.format(Locale.US, "Bağlı ✓  %s", config.getIp()));
                     handler.postDelayed(sender, SEND_MS);
                     handler.postDelayed(telemetryWatchdog, 500);
                     monitorNetwork();
@@ -313,7 +317,7 @@ public class ControlActivity extends AppCompatActivity {
             }
             public void onError(String m) {
                 runOnUiThread(() -> {
-                    tvStatus.setText("Hata: " + m);
+                    tvStatus.setText(String.format(Locale.US, "Hata: %s", m));
                     handler.postDelayed(this::goSetup, 1500);
                 });
             }

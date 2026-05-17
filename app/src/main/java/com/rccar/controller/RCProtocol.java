@@ -14,14 +14,6 @@ import java.util.Locale;
 public class RCProtocol {
 
     /**
-     * Standart kontrol paketi (gyro parametresi yok — receiver mevcut gyro ayarını korur).
-     */
-    public static byte[] buildPacket(int throttle, int steer) {
-        String msg = String.format(Locale.US, "{\"G\":%d,\"Y\":%d}", throttle, steer);
-        return msg.getBytes();
-    }
-
-    /**
      * Gyro parametreli kontrol paketi.
      *
      * @param throttle  -100 … +100

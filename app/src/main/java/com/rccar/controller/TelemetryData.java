@@ -100,8 +100,7 @@ public class TelemetryData {
 
     /** Hücre sayısını metin olarak döner */
     public String cellsLabel() {
-        if (cells == 0) return "?S";
-        return cells + "S";
+        return (cells == 0) ? "--S" : cells + "S";
     }
 
     public boolean isGyroActive() { return gyroGain > 0; }

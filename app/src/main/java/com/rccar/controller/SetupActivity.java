@@ -2,9 +2,10 @@ package com.rccar.controller;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Locale;
 
 /**
  * ESP8266 AP bağlantı ayarları.
@@ -38,7 +39,7 @@ public class SetupActivity extends AppCompatActivity {
         etSsid.setText(config.getSsid());
         etPass.setText(config.getPass());
         etIp.setText(config.getIp());
-        etPort.setText(String.valueOf(config.getPort()));
+        etPort.setText(String.format(Locale.US, "%d", config.getPort()));
 
         btnConnect.setOnClickListener(v -> startConnect());
     }
@@ -50,12 +51,16 @@ public class SetupActivity extends AppCompatActivity {
         String portStr = etPort.getText().toString().trim();
 
         if (ssid.isEmpty() || pass.isEmpty() || ip.isEmpty()) {
-            tvStatus.setText("Tüm alanları doldurun");
+            tvStatus.setText(String.format(Locale.US, "%s", "Tüm alanları doldurun"));
             return;
         }
 
-        int portVal = 4210;
-        try { portVal = Integer.parseInt(portStr); } catch (Exception ignored) {}
+        int portVal;
+        try {
+            portVal = Integer.parseInt(portStr);
+        } catch (Exception ignored) {
+            portVal = 4210;
+        }
         final int port = portVal;
 
         // Kaydet
@@ -65,13 +70,13 @@ public class SetupActivity extends AppCompatActivity {
         config.setPort(port);
 
         btnConnect.setEnabled(false);
-        tvStatus.setText("WiFi'ya bağlanılıyor...");
+        tvStatus.setText(String.format(Locale.US, "%s", "WiFi'ya bağlanılıyor..."));
 
         wifiHelper.connect(ssid, pass, new WifiConnectHelper.Callback() {
             @Override
             public void onSuccess() {
                 runOnUiThread(() -> {
-                    tvStatus.setText("Bağlandı ✓");
+                    tvStatus.setText(String.format(Locale.US, "%s", "Bağlandı ✓"));
                     // Kısa gecikme ile kontrol ekranına geç
                     new android.os.Handler(android.os.Looper.getMainLooper())
                         .postDelayed(() -> {
@@ -83,7 +88,7 @@ public class SetupActivity extends AppCompatActivity {
             @Override
             public void onFailed(String reason) {
                 runOnUiThread(() -> {
-                    tvStatus.setText("Hata: " + reason);
+                    tvStatus.setText(String.format(Locale.US, "Hata: %s", reason));
                     btnConnect.setEnabled(true);
                 });
             }

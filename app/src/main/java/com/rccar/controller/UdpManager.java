@@ -4,6 +4,7 @@ import android.util.Log;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -74,7 +75,7 @@ public class UdpManager {
                     try {
                         DatagramPacket dp = new DatagramPacket(buf, buf.length);
                         recvSocket.receive(dp);
-                        String json = new String(buf, 0, dp.getLength(), "UTF-8");
+                        String json = new String(buf, 0, dp.getLength(), StandardCharsets.UTF_8);
                         if (telemetryListener != null) {
                             TelemetryData td = TelemetryData.parse(json);
                             if (td != null) telemetryListener.onTelemetry(td);

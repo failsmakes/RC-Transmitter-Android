@@ -11,6 +11,11 @@ import android.net.wifi.WifiNetworkSpecifier;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+
+import java.util.Objects;
+
 /**
  * ESP8266 AP'sine programatik olarak bağlanır.
  * Android 10+ (API 29+): WifiNetworkSpecifier
@@ -41,6 +46,7 @@ public class WifiConnectHelper {
     }
 
     // Android 10+ ---------------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.Q)
     private void connectModern(String ssid, String password, Callback cb) {
         WifiNetworkSpecifier spec = new WifiNetworkSpecifier.Builder()
             .setSsid(ssid)
@@ -62,7 +68,7 @@ public class WifiConnectHelper {
 
         netCallback = new ConnectivityManager.NetworkCallback() {
             @Override
-            public void onAvailable(Network network) {
+            public void onAvailable(@NonNull Network network) {
                 // Bu ağ üzerinden tüm trafiği yönlendir (internet yokken de çalışır)
                 cm.bindProcessToNetwork(network);
                 Log.d(TAG, "WiFi bağlandı (modern): " + ssid);
@@ -79,7 +85,7 @@ public class WifiConnectHelper {
     }
 
     // Android 9 ve altı ---------------------------------------------------------
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "MissingPermission"})
     private void connectLegacy(String ssid, String password, Callback cb) {
         WifiManager wm = (WifiManager)
             ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -93,7 +99,7 @@ public class WifiConnectHelper {
         if (netId == -1) {
             // Daha önce eklenmiş olabilir, bul
             for (WifiConfiguration c : wm.getConfiguredNetworks()) {
-                if (c.SSID.equals("\"" + ssid + "\"")) { netId = c.networkId; break; }
+                if (Objects.equals(c.SSID, "\"" + ssid + "\"")) { netId = c.networkId; break; }
             }
         }
         if (netId == -1) { if (cb!=null) cb.onFailed("Ağ eklenemedi"); return; }
@@ -115,8 +121,9 @@ public class WifiConnectHelper {
             }, 3000);
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     public void release() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && netCallback != null) {
+        if (netCallback != null) {
             ConnectivityManager cm = (ConnectivityManager)
                 ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
             try { cm.unregisterNetworkCallback(netCallback); } catch (Exception ignored) {}
