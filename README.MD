@@ -125,7 +125,149 @@ If you improve the project, feel free to contribute.
 
 # Author
 
-<img alt="Fails&Makes Logo" width="250" src="./images/Fails&Makes_Logo_Color_Rounded.png">
+<img alt="Fails&Makes Logo" width="200" src="./images/Fails&Makes_Logo_Color_Rounded.png">
+
+Fails&Makes
+
+YouTube:
+https://www.youtube.com/@failsmakes
+
+GitHub:
+https://github.com/failsmakes
+
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+# RC Transmitter Android
+
+ESP32 RC alıcı projesi için geliştirilmiş Android tabanlı RC verici uygulaması.
+
+Ana alıcı firmware projesi:
+
+👉 https://github.com/failsmakes/RC-Receiver-ESP
+
+Bu uygulama bir Android telefon veya tableti, DIY RC araçlar, robotlar ve ESP32 tabanlı özel projeler için kablosuz bir RC vericisine dönüştürür.
+
+Uygulama ESP32 alıcı ile WiFi üzerinden haberleşir ve özelleştirilebilir dokunmatik kontrol arayüzü sunar.
+
+---
+
+# MakerZ Projesi İçin Tasarlanmıştır
+
+<img alt="MakerZ Logo" width="300" src="https://raw.githubusercontent.com/failsmakes/RC-Transmitter-Android/master/images/MakerZ-Ana-Logo2.png">
+
+👉 https://www.printables.com/model/1722018
+
+👉 https://cad.onshape.com/documents/7d9962a6c5298b518856c9ab
+
+---
+
+# Özellikler
+
+* Android tabanlı RC verici
+* Dokunmatik joystick kontrolleri
+* ESP32 alıcı desteği
+* WiFi üzerinden haberleşme
+* Düşük gecikmeli kontrol
+* Basit ve hafif arayüz
+* Açık kaynak proje
+
+---
+
+# Desteklenen Donanımlar
+
+Aşağıdaki alıcı firmware projesi ile uyumludur:
+
+👉 https://github.com/failsmakes/RC-Receiver-ESP
+
+Aşağıdaki projelerde kullanılabilir:
+
+* RC arabalar
+* RC tekneler
+* DIY robotlar
+* ESP32 tabanlı özel projeler
+* Robotik platformlar
+
+---
+
+# Ekran Görüntüleri
+
+<img alt="Screenshot" width="300" src="https://raw.githubusercontent.com/failsmakes/RC-Transmitter-Android/master/images/MakerZ-RC-Transmitter.jpeg">
+
+---
+
+# Nasıl Çalışır
+
+1. Alıcı firmware kodunu ESP32 karta yükleyin
+2. Alıcı donanımına güç verin
+3. Android cihazınızı alıcının WiFi ağına bağlayın
+4. Android transmitter uygulamasını başlatın
+5. RC aracınızı kontrol etmeye başlayın
+
+---
+
+# Android Gereksinimleri
+
+* Android 7.0 veya üzeri önerilir
+* WiFi destekli cihaz
+* Dokunmatik ekran desteği
+
+---
+
+# Proje Yapısı
+
+* Android Studio proje dosyaları
+* Kaynak kodlar
+* Asset dosyaları
+* Gradle yapılandırmaları
+* Arayüz kaynakları
+
+---
+
+# Uygulamayı Derleme
+
+Projeyi klonlayın:
+
+```bash id="v5f3na"
+git clone https://github.com/failsmakes/RC-Transmitter-Android.git
+```
+
+Projeyi aşağıdaki program ile açın:
+
+* Android Studio
+
+Daha sonra uygulamayı Android cihazınıza derleyip çalıştırabilirsiniz.
+
+---
+
+# Gelecekte Planlanan Özellikler
+
+Planlanan geliştirmeler:
+
+* Bluetooth desteği
+* Daha fazla kanal desteği
+* Özelleştirilebilir kanal eşleme
+* OTA firmware güncellemeleri
+* Çoklu model profilleri
+
+---
+
+# Lisans
+
+Aksi belirtilmedikçe bu proje MIT lisansı altında açık kaynak olarak paylaşılmaktadır.
+
+---
+
+# Katkıda Bulunma
+
+Pull request, hata bildirimi ve özellik önerilerine açığız.
+
+Projeyi geliştirirseniz katkıda bulunmaktan çekinmeyin.
+
+---
+
+# Geliştirici
+
+<img alt="Fails&Makes Logo" width="200" src="https://raw.githubusercontent.com/failsmakes/RC-Transmitter-Android/master/images/Fails&Makes_Logo_Color_Rounded.png">
 
 Fails&Makes
 
