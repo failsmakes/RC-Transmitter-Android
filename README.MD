@@ -14,7 +14,7 @@ The app communicates with the ESP32 receiver over WiFi and provides a customizab
 
 # Designed for the MakerZ Project
 
-![MakerZ Logo](/images/MakerZ-Ana-Logo2.png)
+<img alt="MakerZ Logo" width="400" src="/images/MakerZ-Ana-Logo2.png">
 
 👉 https://www.printables.com/model/1722018
 👉 https://cad.onshape.com/documents/7d9962a6c5298b518856c9ab
